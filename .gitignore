@@ -1,0 +1,7 @@
+.vscode
+Debug
+Release
+
+nlm_demo.vcxproj.filters
+nlm_demo.vcxproj.user
+nlm_demo.vcxproj

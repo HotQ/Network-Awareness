@@ -1,7 +1,13 @@
 .vscode
+.DS_Store
+
 Debug
 Release
 
 nlm_demo.vcxproj.filters
 nlm_demo.vcxproj.user
 nlm_demo.vcxproj
+
+
+mac/Network-Awareness.xcodeproj
+*.md

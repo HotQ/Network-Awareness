@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BVNETWORKLISTMANAGER_H
+#define BVNETWORKLISTMANAGER_H
 #include <memory>
 #include <netlistmgr.h>
 #pragma comment(lib, "ole32.lib")
@@ -37,13 +38,15 @@ public:
 
 class BV_NLM 
 {
+private:
 	static std::shared_ptr<BV_NLM> m_instance;
+	static DWORD WINAPI AdviseDispatch(LPVOID lpParam);
 
 	DWORD ThreadID;
 	HANDLE hThread;
 
-	static DWORD WINAPI AdviseDispatch(LPVOID lpParam);
 	BV_NLM();
+
 public:
 	BV_NLM(const BV_NLM&) = delete;            //禁止拷贝
 	BV_NLM& operator=(const BV_NLM&) = delete; //禁止赋值
@@ -60,3 +63,5 @@ public:
 
 	~BV_NLM();
 };
+
+#endif // !BVNETWORKLISTMANAGER_H

@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) dispatch_queue_t dispatchAdapter;
 @property (nonatomic, assign) SCNetworkReachabilityRef reachabilityRef;
+@property (nonatomic, retain) BV_NetWorkEvent *netWorkEvent;
 
 +(SCNetworkReachabilityRef)getZeroAddress;
 

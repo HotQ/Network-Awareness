@@ -15,8 +15,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) bool m_conAlive;
 @property (nonatomic, assign) bool m_inLoop;
+@property (nonatomic, retain) NSTimer *timer;
+@property (nonatomic, retain) NSThread *thread;
 
 -(BOOL)ConnectivityChanged:(SCNetworkReachabilityFlags) reachabilityFlag;
+-(void)LostWait:(NSTimer *)tempTimer;
+-(void)Start;
+-(void)Pause;
+-(void)Stop;
 
 @end
 
@@ -31,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(instancetype)initWithRef:(SCNetworkReachabilityRef)reachabilityRef;
 -(BOOL)Start;
--(BOOL)Stop;
+-(void)Stop;
 -(void)dealloc;
 
 @end

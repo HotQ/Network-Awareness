@@ -11,13 +11,13 @@
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
+        int i;
+
         BV_NLM *instance = [[BV_NLM alloc] initWithRef : [BV_NLM getZeroAddress]];
         [instance Start];
-        int i = 1;
-        while(i<10){
-            i++;sleep(1);
-            NSLog(@"%d s",i);
-        }
+        i = 1;while(i<1){ NSLog(@"%d s",i); i++;sleep(1);}
+        [instance Stop];
+
     }
     return 0;
 }

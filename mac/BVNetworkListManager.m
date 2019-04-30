@@ -9,17 +9,78 @@
 #import "BVNetworkListManager.h"
 #import <netinet/in.h>
 #define adapterName "com.github.HotQ"
+#define NLM_LOOP_WAIT_PERIOD 10
+
+@implementation BV_NetWorkEvent
+
+-(BOOL)ConnectivityChanged:(SCNetworkReachabilityFlags) flags
+{
+    if(flags & kSCNetworkReachabilityFlagsReachable)
+    {
+        if(self.timer != nil)
+            [self Pause];
+    }
+    else
+    {
+        NSLog(@"Connection Interrupted!!!");
+        [self Start];
+        
+    }
+    return YES;
+}
+
+- (void)dealloc
+{
+    NSLog(@"event awsl");
+}
+
+-(void)Start
+{
+    if(self.thread == nil){
+        NSLog(@"thread created");
+        self.thread = [[NSThread alloc] initWithTarget:self selector:@selector(LostWait:) object:nil];
+        [self.thread start];
+    }else{
+        NSLog(@"timer reFired");
+        [self.timer setFireDate:[[NSDate date] dateByAddingTimeInterval:NLM_LOOP_WAIT_PERIOD]];
+    }
+}
+
+-(void)LostWait:(NSTimer *)tempTimer
+{
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:NLM_LOOP_WAIT_PERIOD repeats:YES block:^(NSTimer * _Nonnull timer) {
+        NSLog(@"Connection Lost!!!");
+    }];
+    [[NSRunLoop currentRunLoop] run];
+    NSLog(@"线程结束啦");
+}
+
+-(void)Pause
+{
+    [self.timer setFireDate:[NSDate distantFuture]];
+}
+
+-(void)Stop
+{
+    [self.timer invalidate];
+    [self.thread cancel];
+}
+
+@end
+
+
 
 @implementation BV_NLM
 
 +(SCNetworkReachabilityRef)getZeroAddress
-{    /*
-      See Apple's Reachability implementation and read me:
-      The address 0.0.0.0, which reachability treats as a special token that
-      causes it to actually monitor the general routing status of the device,
-      both IPv4 and IPv6.
-      https://developer.apple.com/library/ios/samplecode/Reachability/Listings/ReadMe_md.html#//apple_ref/doc/uid/DTS40007324-ReadMe_md-DontLinkElementID_11
-      */
+{
+    /*
+     See Apple's Reachability implementation and read me:
+     The address 0.0.0.0, which reachability treats as a special token that
+     causes it to actually monitor the general routing status of the device,
+     both IPv4 and IPv6.
+     https://developer.apple.com/library/ios/samplecode/Reachability/Listings/ReadMe_md.html#//apple_ref/doc/uid/DTS40007324-ReadMe_md-DontLinkElementID_11
+     */
     struct sockaddr_in6 zeroAddress;
     bzero(&zeroAddress, sizeof(zeroAddress));
     zeroAddress.sin6_len = sizeof(zeroAddress);
@@ -59,34 +120,19 @@ void callbackEntry( SCNetworkReachabilityRef target, SCNetworkReachabilityFlags 
     }
     return ret;
 }
--(BOOL)Stop{
-    return YES;
+
+-(void)Stop{
+    SCNetworkReachabilitySetDispatchQueue(self.reachabilityRef, NULL);
 }
+
 - (void)dealloc
 {
     [self Stop];
+    [self.netWorkEvent Stop];
     if (self.reachabilityRef != NULL)
     {
         CFRelease(self.reachabilityRef);
     }
 }
-@end
 
-
-
-@implementation BV_NetWorkEvent
-
--(BOOL)ConnectivityChanged:(SCNetworkReachabilityFlags) flags
-{
-    if(flags & kSCNetworkReachabilityFlagsReachable)
-        NSLog(@"网络重连");
-    else{
-        NSLog(@"连接丢失");
-    }
-    return YES;
-}
-- (void)dealloc
-{
-    NSLog(@"awsl....");
-}
 @end

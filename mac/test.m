@@ -15,8 +15,9 @@ int main(int argc, const char * argv[]) {
 
         BV_NLM *instance = [[BV_NLM alloc] initWithRef : [BV_NLM getZeroAddress]];
         [instance Start];
-        i = 1;while(i<1){ NSLog(@"%d s",i); i++;sleep(1);}
+        i = 1; while(i<20){ NSLog(@"%d s",i); i++;sleep(1);}
         [instance Stop];
+        i = 1; while(i<20){ NSLog(@"%d s",i); i++;sleep(1);}
 
     }
     return 0;

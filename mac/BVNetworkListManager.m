@@ -9,7 +9,8 @@
 #import "BVNetworkListManager.h"
 #import <netinet/in.h>
 #define adapterName "com.github.HotQ"
-#define NLM_LOOP_WAIT_PERIOD 10
+#define NLM_LOOP_WAIT_PERIOD 3
+#define TIMEOUT_CHECK_INTERVAL 1
 
 @implementation BV_NetWorkEvent
 
@@ -17,13 +18,14 @@
 {
     if(flags & kSCNetworkReachabilityFlagsReachable)
     {
+        NSLog(@"重连！");
         if(self.timer != nil)
             [self Pause];
     }
     else
     {
         NSLog(@"Connection Interrupted!!!");
-        [self Start];
+        [self StartWaiting];
         
     }
     return YES;
@@ -34,7 +36,7 @@
     NSLog(@"event awsl");
 }
 
--(void)Start
+-(void)StartWaiting
 {
     if(self.thread == nil){
         NSLog(@"thread created");
@@ -51,17 +53,21 @@
     self.timer = [NSTimer scheduledTimerWithTimeInterval:NLM_LOOP_WAIT_PERIOD repeats:YES block:^(NSTimer * _Nonnull timer) {
         NSLog(@"Connection Lost!!!");
     }];
-    [[NSRunLoop currentRunLoop] run];
-    NSLog(@"线程结束啦");
+    NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+    while(![[NSThread currentThread] isCancelled]){
+        [runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:TIMEOUT_CHECK_INTERVAL]];
+    }
 }
 
 -(void)Pause
 {
+    NSLog(@"timer pause");
     [self.timer setFireDate:[NSDate distantFuture]];
 }
 
 -(void)Stop
 {
+    NSLog(@"BV_NetWorkEvent Stop is called");
     [self.timer invalidate];
     [self.thread cancel];
 }

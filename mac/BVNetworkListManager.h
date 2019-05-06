@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(BOOL)ConnectivityChanged:(SCNetworkReachabilityFlags) reachabilityFlag;
 -(void)LostWait:(NSTimer *)tempTimer;
--(void)Start;
+-(void)StartWaiting;
 -(void)Pause;
 -(void)Stop;
 

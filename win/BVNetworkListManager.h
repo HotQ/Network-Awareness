@@ -22,7 +22,7 @@ private:
 	HANDLE m_hTimerQueue;
 	HANDLE m_hTimer;
 
-	BV_NLM *sink;
+	BV_NLM *m_sink;
 
 	static VOID CALLBACK LostWait(PVOID lpParameter, BOOLEAN TimerOrWaitFired);
 

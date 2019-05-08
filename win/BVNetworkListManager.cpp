@@ -16,7 +16,7 @@ VOID BV_NetWorkEvent::LostWait(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 BV_NetWorkEvent::BV_NetWorkEvent(bool isConAlive)
 {
 	m_ref = 1;
-	sink = nullptr;
+	m_sink = nullptr;
 	m_hTimerQueue = CreateTimerQueue();
 	m_hTimer = NULL;
 	m_inLoop = false;
@@ -25,7 +25,7 @@ BV_NetWorkEvent::BV_NetWorkEvent(bool isConAlive)
 
 void BV_NetWorkEvent::setSink(BV_NLM *sink)
 {
-	this->sink = sink;
+	m_sink = sink;
 }
 
 HRESULT __stdcall BV_NetWorkEvent::ConnectivityChanged(NLM_CONNECTIVITY netStat)
@@ -64,15 +64,15 @@ HRESULT __stdcall BV_NetWorkEvent::ConnectivityChanged(NLM_CONNECTIVITY netStat)
 	{
 		show(活->断)
 			m_conAlive = conAlive;
-		if (sink != nullptr && sink->m_onConInterrupted != nullptr)
+		if (m_sink != nullptr && m_sink->m_onConInterrupted != nullptr)
 		{
-			sink->m_onConInterrupted(sink->lpParamInterrupted);
+			m_sink->m_onConInterrupted(m_sink->lpParamInterrupted);
 		}
 
-		if (sink != nullptr && sink->m_onConLost != nullptr)
+		if (m_sink != nullptr && m_sink->m_onConLost != nullptr)
 		{
 		m_inLoop = true;
-			CreateTimerQueueTimer(&m_hTimer, m_hTimerQueue, WAITORTIMERCALLBACK(LostWait), sink, NLM_FRST_WAIT_PERIOD, NLM_LOOP_WAIT_PERIOD, NULL);
+			CreateTimerQueueTimer(&m_hTimer, m_hTimerQueue, WAITORTIMERCALLBACK(LostWait), m_sink, NLM_FRST_WAIT_PERIOD, NLM_LOOP_WAIT_PERIOD, NULL);
 		}
 	}
 	m_conAlive = conAlive;

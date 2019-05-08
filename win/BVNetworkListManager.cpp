@@ -4,34 +4,28 @@
 
 #include "BVNetworkListManager.h"
 
-#define show( str ) printf( #str##"\n" );
+#define show(str) printf(#str##"\n");
 #define _CRTDBG_MAP_ALLOC
-
 
 VOID BV_NetWorkEvent::LostWait(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 {
-	static_cast<void(*)(void)>(lpParameter)();
+	BV_NLM *sink = static_cast<BV_NLM *>(lpParameter);
+	sink->m_onConLost(sink->lpParamLost);
 }
 
 BV_NetWorkEvent::BV_NetWorkEvent(bool isConAlive)
 {
 	m_ref = 1;
-	m_onConInterrupted = nullptr;
-	m_onConLost = nullptr;
+	sink = nullptr;
 	m_hTimerQueue = CreateTimerQueue();
 	m_hTimer = NULL;
 	m_inLoop = false;
 	m_conAlive = isConAlive;
 }
 
-void BV_NetWorkEvent::onInterrupted(void(*callback)(void))
+void BV_NetWorkEvent::setSink(BV_NLM *sink)
 {
-	m_onConInterrupted = callback;
-}
-
-void BV_NetWorkEvent::onLost(void(*callback)(void))
-{
-	m_onConLost = callback;
+	this->sink = sink;
 }
 
 HRESULT __stdcall BV_NetWorkEvent::ConnectivityChanged(NLM_CONNECTIVITY netStat)
@@ -43,7 +37,8 @@ HRESULT __stdcall BV_NetWorkEvent::ConnectivityChanged(NLM_CONNECTIVITY netStat)
 		show(NLM_CONNECTIVITY_DISCONNECTED);
 		conAlive = false;
 	}
-	else {
+	else
+	{
 		if ((netStat & NLM_CONNECTIVITY_IPV4_NOTRAFFIC) && (netStat & NLM_CONNECTIVITY_IPV6_NOTRAFFIC))
 		{// 无连接
 			conAlive = false;
@@ -59,7 +54,8 @@ HRESULT __stdcall BV_NetWorkEvent::ConnectivityChanged(NLM_CONNECTIVITY netStat)
 	{
 		m_conAlive = conAlive;
 		show(断->活);
-		if (m_inLoop) {
+		if (m_inLoop)
+		{
 			DeleteTimerQueueTimer(m_hTimerQueue, m_hTimer, NULL);
 			m_inLoop = false;
 		}
@@ -68,20 +64,23 @@ HRESULT __stdcall BV_NetWorkEvent::ConnectivityChanged(NLM_CONNECTIVITY netStat)
 	{
 		show(活->断)
 			m_conAlive = conAlive;
-		if (m_onConInterrupted != nullptr) {
-			m_onConInterrupted();
+		if (sink != nullptr && sink->m_onConInterrupted != nullptr)
+		{
+			sink->m_onConInterrupted(sink->lpParamInterrupted);
 		}
 
+		if (sink != nullptr && sink->m_onConLost != nullptr)
+		{
 		m_inLoop = true;
-		CreateTimerQueueTimer(&m_hTimer, m_hTimerQueue, WAITORTIMERCALLBACK(LostWait), m_onConLost, NLM_FRST_WAIT_PERIOD, NLM_LOOP_WAIT_PERIOD, NULL);
-
+			CreateTimerQueueTimer(&m_hTimer, m_hTimerQueue, WAITORTIMERCALLBACK(LostWait), sink, NLM_FRST_WAIT_PERIOD, NLM_LOOP_WAIT_PERIOD, NULL);
+		}
 	}
 	m_conAlive = conAlive;
 	printf("ConnectivityChanged: %04X\n", netStat);
-	return(S_OK);
+	return S_OK;
 }
 
-STDMETHODIMP BV_NetWorkEvent::QueryInterface(REFIID refIID, void** pIFace)
+STDMETHODIMP BV_NetWorkEvent::QueryInterface(REFIID refIID, void **pIFace)
 {
 	HRESULT hr = S_OK;
 	*pIFace = NULL;
@@ -95,16 +94,17 @@ STDMETHODIMP BV_NetWorkEvent::QueryInterface(REFIID refIID, void** pIFace)
 		*pIFace = (INetworkListManagerEvents *)this;
 		((IUnknown *)*pIFace)->AddRef();
 	}
-	else {
+	else
+	{
 		hr = E_NOINTERFACE;
 	}
 
-	return(hr);
+	return hr;
 }
 
 ULONG __stdcall BV_NetWorkEvent::AddRef(void)
 {
-	return((ULONG)InterlockedIncrement(&m_ref));
+	return (ULONG)InterlockedIncrement(&m_ref);
 }
 
 ULONG __stdcall BV_NetWorkEvent::Release(void)
@@ -112,7 +112,7 @@ ULONG __stdcall BV_NetWorkEvent::Release(void)
 	LONG Result = InterlockedDecrement(&m_ref);
 	if (Result == 0)
 		delete this;
-	return((ULONG)Result);
+	return (ULONG)Result;
 }
 
 /* TODO: 错误处理 */
@@ -123,7 +123,7 @@ DWORD WINAPI BV_NLM::AdviseDispatch(LPVOID lpParam)
 	CComPtr<IConnectionPointContainer>	pCpc;
 	CComPtr<IConnectionPoint>           pConnectionPoint;
 	DWORD m_cookie;
-	MSG   msg;
+	MSG msg;
 
 	HRESULT hr = CoCreateInstance(CLSID_NetworkListManager, NULL, CLSCTX_ALL, IID_INetworkListManager, (LPVOID *)&pNLM);
 	printf("CLSID_NetworkListManager: %d\n", FAILED(hr));
@@ -131,13 +131,11 @@ DWORD WINAPI BV_NLM::AdviseDispatch(LPVOID lpParam)
 	VARIANT_BOOL bConnected = VARIANT_FALSE;
 	hr = pNLM->get_IsConnected(&bConnected);
 
-	hr = pNLM->QueryInterface(IID_IConnectionPointContainer, (void * *)&pCpc);
+	hr = pNLM->QueryInterface(IID_IConnectionPointContainer, (void **)&pCpc);
 	hr = pCpc->FindConnectionPoint(IID_INetworkListManagerEvents, &pConnectionPoint);
 
-	// std::shared_ptr<void(*[2])(void)>arrCallback = *(std::shared_ptr<void(*[2])(void)>*)lpParam;
 	std::shared_ptr<BV_NetWorkEvent> pEvent = std::make_shared<BV_NetWorkEvent>(bConnected == VARIANT_TRUE);
-	pEvent->onInterrupted(((BV_NLM*)lpParam)->m_onConInterrupted);
-	pEvent->onLost(((BV_NLM*)lpParam)->m_onConLost);
+	pEvent->setSink(static_cast<BV_NLM *>(lpParam));
 	hr = pConnectionPoint->Advise((IUnknown *)pEvent.get(), &m_cookie);
 
 	/* GetMessage阻塞 */
@@ -154,7 +152,7 @@ DWORD WINAPI BV_NLM::AdviseDispatch(LPVOID lpParam)
 	{
 		pConnectionPoint->Unadvise(m_cookie);
 	}
-	return(0);
+	return 0;
 }
 
 BV_NLM::BV_NLM()
@@ -177,17 +175,19 @@ std::shared_ptr<BV_NLM> BV_NLM::m_instance(new BV_NLM());
 
 std::shared_ptr<BV_NLM> BV_NLM::GetInstance()
 {
-	return(m_instance);
+	return m_instance;
 }
 
-void BV_NLM::onInterrupted(void(*callback)(void))
+void BV_NLM::onInterrupted(NLM_CALLBACK callback, PVOID lpParameter)
 {
 	m_onConInterrupted = callback;
+	lpParamInterrupted = lpParameter;
 }
 
-void BV_NLM::onLost(void(*callback)(void))
+void BV_NLM::onLost(NLM_CALLBACK callback, PVOID lpParameter)
 {
 	m_onConLost = callback;
+	lpParamLost = lpParameter;
 }
 
 void BV_NLM::Destroy()

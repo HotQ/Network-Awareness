@@ -10,4 +10,7 @@ nlm_demo.vcxproj
 
 
 mac/Network-Awareness.xcodeproj
+win/Network-Awareness-win.*
+win/.vs/
+
 *.md

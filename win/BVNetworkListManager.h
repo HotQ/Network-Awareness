@@ -1,4 +1,4 @@
-#ifndef BVNETWORKLISTMANAGER_H
+﻿#ifndef BVNETWORKLISTMANAGER_H
 #define BVNETWORKLISTMANAGER_H
 #include <memory>
 #include <netlistmgr.h>

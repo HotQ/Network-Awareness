@@ -1,4 +1,4 @@
-#include "BVNetworkListManager.h"
+﻿#include "BVNetworkListManager.h"
 #include <iostream>
 #define show( str ) printf( #str##"\n" );
 

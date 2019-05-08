@@ -101,7 +101,8 @@
     self = [super init];
     if (self != nil)
     {
-        self.dispatchAdapter = dispatch_queue_create(adapterName, NULL);
+        // 高版本osx开启ARC已不用dispatch_release()释放。
+        self.dispatchAdapter = dispatch_queue_create(adapterName, DISPATCH_QUEUE_SERIAL);
         self.reachabilityRef = reachabilityRef;
     }
     return self;
